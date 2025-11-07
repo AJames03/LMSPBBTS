@@ -4,6 +4,7 @@ import { Poppins } from 'next/font/google'
 import { auth } from "@/app/lib/firebase";
 import { signInWithEmailAndPassword, onAuthStateChanged } from "firebase/auth";
 import { useRouter } from 'next/navigation';
+import 'bootstrap-icons/font/bootstrap-icons.css'
 
 const poppins = Poppins({
     weight: ['100', '200', '300', '400', '500', '600', '700', '800', '900'], 
