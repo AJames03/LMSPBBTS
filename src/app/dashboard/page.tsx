@@ -23,7 +23,7 @@ export default function Page() {
   }
 
   return (
-    <div className='bg-amber-50 w-screen h-screen text-black grid grid-rows-[auto_1fr]'>
+    <div className='bg-white w-screen h-screen text-black grid grid-rows-[auto_1fr]'>
       {/* Header */}
       <header className='w-full bg-blue-900 p-2 flex items-center gap-3'>
         <img src="/favicon.ico" alt="logo" className='w-10 h-10 sm:w-14 sm:h-14' />
@@ -66,7 +66,7 @@ export default function Page() {
         )}
 
         {/* Content */}
-        <div className='ml-0 md:ml-0 p-4 w-full'>
+        <div className='flex justify-center items-center absolute  sm:relative p-4 w-full h-full'>
           {dashboardTabs()}
         </div>
       </div>

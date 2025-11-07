@@ -35,7 +35,7 @@ export default function page() {
     };
 
   return (
-    <div className='bg-amber-50 w-screen h-screen text-black p-2 flex justify-center items-center'>
+    <div className='bg-white w-screen h-screen text-black p-2 flex justify-center items-center'>
         <div className='flex flex-col justify-center items-center gap-5 sm:bg-white sm:shadow-xl sm:p-10 sm:rounded-md'>
             <span className='flex flex-col justify-center items-center gap-2'>
                 <img className='w-16 h-16 sm:w-20 sm:h-20' src="/favicon.ico" alt="logo" />
