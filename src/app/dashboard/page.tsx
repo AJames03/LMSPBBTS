@@ -25,7 +25,7 @@ export default function Page() {
   return (
     <div className='bg-white w-screen h-screen text-black grid grid-rows-[auto_1fr]'>
       {/* Header */}
-      <header className='w-full bg-blue-900 p-2 flex items-center gap-3'>
+      <header className='sticky top-0 z-1 w-full bg-blue-900 p-2 flex items-center gap-3'>
         <img src="/favicon.ico" alt="logo" className='w-10 h-10 sm:w-14 sm:h-14' />
         <h1 className={`${poppins.className} sm:text-2xl font-bold text-white flex-1`}>PBBTS ADMINISTRATION</h1>
         
@@ -66,7 +66,7 @@ export default function Page() {
         )}
 
         {/* Content */}
-        <div className='flex justify-center items-center absolute  sm:relative p-4 w-full h-full'>
+        <div className='flex justify-center items-center absolute  sm:relative w-full h-full'>
           {dashboardTabs()}
         </div>
       </div>
