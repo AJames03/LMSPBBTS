@@ -14,14 +14,14 @@ export default function QRScanner() {
   const scannerRef = useRef<HTMLDivElement | null>(null)
   const html5QrCodeRef = useRef<Html5Qrcode | null>(null)
 
-  const [result, setResult] = useState('')
-  const [cameras, setCameras] = useState<CameraDevice[]>([])
-  const [selectedCamera, setSelectedCamera] = useState<string>('')
-
+  const [studentID, setStudentID] = useState('')
   const [studentName, setStudentName] = useState('')
   const [date, setDate] = useState('')
   const [time, setTime] = useState('')
   const [status, setStatus] = useState('')
+
+  const [cameras, setCameras] = useState<CameraDevice[]>([])
+  const [selectedCamera, setSelectedCamera] = useState<string>('')
 
   // 🔹 Get available cameras
   useEffect(() => {
@@ -60,7 +60,6 @@ export default function QRScanner() {
     const startScanner = async () => {
       await stopScanner()
 
-      // ✅ Use a static ID instead of ref.id to avoid undefined
       const html5QrCode = new Html5Qrcode('qr-scanner')
       html5QrCodeRef.current = html5QrCode
 
@@ -75,7 +74,6 @@ export default function QRScanner() {
     }
 
     startScanner()
-
     return () => {
       stopScanner()
     }
@@ -83,61 +81,55 @@ export default function QRScanner() {
 
   // 🔹 When QR is scanned
   const handleScan = async (decodedText: string) => {
-    setResult(decodedText)
-
-    const currentDate = new Date()
-    const formattedDate = currentDate.toLocaleDateString('en-US', {
-      month: 'long',
-      day: 'numeric',
-      year: 'numeric',
-    })
-    const formattedTime = currentDate.toLocaleTimeString('en-US', {
-      hour: '2-digit',
-      minute: '2-digit',
-    })
-
-    setDate(formattedDate)
-    setTime(formattedTime)
-    setStatus('Present')
-
-    // Fetch student name from Firestore
+    const studentDocRef = doc(db, 'students', decodedText)
     try {
-      const docRef = doc(db, 'students', decodedText)
-      const docSnap = await getDoc(docRef)
+      const docSnap = await getDoc(studentDocRef)
 
       if (docSnap.exists()) {
         const data = docSnap.data()
+        setStudentID(decodedText) // Document ID as Student ID
         setStudentName(data.name || 'Unknown Student')
+        const current = new Date()
+        setDate(current.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }))
+        setTime(current.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }))
+        setStatus('Present')
       } else {
+        setStudentID(decodedText)
         setStudentName('Unknown Student')
+        setDate('')
+        setTime('')
+        setStatus('Not Found')
       }
     } catch (err) {
       console.error('Error fetching student:', err)
+      setStudentID(decodedText)
       setStudentName('Error loading name')
+      setDate('')
+      setTime('')
+      setStatus('Error')
     }
   }
 
   // 🔹 Save attendance to Firestore
   const handleSave = async () => {
-    if (!result) return alert('Please scan a QR code first.')
+    if (!studentID) return alert('Please scan a QR code first.')
 
+    const docRef = doc(db, 'students', studentID)
     try {
-      const docRef = doc(db, 'students', result)
       await updateDoc(docRef, {
         attendance: {
-          date: date,
-          time: time,
-          status: status,
-        },
+          date,
+          time,
+          status
+        }
       }).catch(async () => {
-        // If student doc doesn't exist, create it
         await setDoc(docRef, {
           name: studentName || 'Unknown',
           attendance: {
-            date: date,
-            time: time,
-            status: status,
-          },
+            date,
+            time,
+            status
+          }
         })
       })
 
@@ -152,14 +144,13 @@ export default function QRScanner() {
     <div className="flex flex-col items-center gap-4 p-4">
       <h1 className="text-xl font-bold">QR Attendance Scanner</h1>
 
-      {/* ✅ Scanner container */}
       <div
         id="qr-scanner"
         ref={scannerRef}
         style={{ width: '300px', marginTop: '10px' }}
       ></div>
 
-      {/* 🔹 Camera selector */}
+      {/* Camera selector */}
       <label className="flex flex-col items-center">
         <span className="text-sm font-medium mb-1">Choose Camera:</span>
         <select
@@ -175,10 +166,10 @@ export default function QRScanner() {
         </select>
       </label>
 
-      {/* 🔹 Show scanned info */}
-      {result && (
+      {/* Display scanned info */}
+      {studentID && (
         <div className="border p-3 rounded w-full max-w-sm bg-gray-100 mt-3 text-center">
-          <p><strong>Student ID:</strong> {result}</p>
+          <p><strong>Student ID:</strong> {studentID}</p>
           <p><strong>Name:</strong> {studentName}</p>
           <p><strong>Date:</strong> {date}</p>
           <p><strong>Time:</strong> {time}</p>
