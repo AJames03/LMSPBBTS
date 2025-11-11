@@ -122,23 +122,35 @@ export default function QRScanner() {
 
     try {
       const docRef = doc(db, 'students', result.trim())
-      await updateDoc(docRef, {
-        attendance: {
-          date: date,
-          time: time,
-          status: status,
-        },
-      }).catch(async () => {
-        // If student doc doesn't exist, create it
+      const docSnap = await getDoc(docRef)
+
+      const newEntry = {
+        time: time,
+        status: status,
+      }
+
+      if (docSnap.exists()) {
+        const data = docSnap.data()
+        const existingAttendance = data.attendance || {}
+
+        const dateEntries = existingAttendance[date] || []
+        dateEntries.push(newEntry)
+
+        await updateDoc(docRef, {
+          attendance: {
+            ...existingAttendance,
+            [date]: dateEntries,
+          },
+        })
+      } else {
+        // Create new document if it doesn't exist
         await setDoc(docRef, {
           name: studentName || 'Unknown',
           attendance: {
-            date: date,
-            time: time,
-            status: status,
+            [date]: [newEntry],
           },
         })
-      })
+      }
 
       alert('✅ Attendance saved successfully!')
     } catch (err) {
@@ -146,6 +158,7 @@ export default function QRScanner() {
       alert('❌ Failed to save attendance.')
     }
   }
+
 
   return (
     <div className="flex flex-col items-center gap-4 p-4">
