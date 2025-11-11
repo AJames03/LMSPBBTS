@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
-import { Html5Qrcode, Html5QrcodeScannerState } from 'html5-qrcode'
+import { Html5Qrcode } from 'html5-qrcode'
 import { db } from '@/app/lib/firebase'
 import { doc, getDoc, updateDoc, setDoc } from 'firebase/firestore'
 
@@ -17,6 +17,7 @@ export default function QRScanner() {
   const [result, setResult] = useState('')
   const [cameras, setCameras] = useState<CameraDevice[]>([])
   const [selectedCamera, setSelectedCamera] = useState<string>('')
+  const [showModal, setShowModal] = useState(false)
 
   const [studentName, setStudentName] = useState('')
   const [date, setDate] = useState('')
@@ -29,7 +30,7 @@ export default function QRScanner() {
       .then((devices: CameraDevice[]) => {
         if (devices.length > 0) {
           setCameras(devices)
-          setSelectedCamera(devices[0].id)
+          setSelectedCamera(devices[1].id)
         }
       })
       .catch(err => console.error('Error getting cameras:', err))
@@ -93,6 +94,7 @@ export default function QRScanner() {
     setDate(formattedDate)
     setTime(formattedTime)
     setStatus('Present')
+    setShowModal(true)
 
     // 🔹 Fetch student name from Firestore
     try {
