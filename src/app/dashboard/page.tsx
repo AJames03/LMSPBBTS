@@ -1,6 +1,7 @@
 'use client'
 import React, { useState } from 'react'
 import { Poppins } from 'next/font/google'
+import 'bootstrap-icons/font/bootstrap-icons.css'
 import QRGen from '@/app/dashboard/pages/qrgenerator'
 import QRScanner from '@/app/dashboard/pages/qrscanner'
 
