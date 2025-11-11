@@ -14,14 +14,14 @@ export default function QRScanner() {
   const scannerRef = useRef<HTMLDivElement | null>(null)
   const html5QrCodeRef = useRef<Html5Qrcode | null>(null)
 
-  const [studentID, setStudentID] = useState('')
+  const [result, setResult] = useState('')
+  const [cameras, setCameras] = useState<CameraDevice[]>([])
+  const [selectedCamera, setSelectedCamera] = useState<string>('')
+
   const [studentName, setStudentName] = useState('')
   const [date, setDate] = useState('')
   const [time, setTime] = useState('')
   const [status, setStatus] = useState('')
-
-  const [cameras, setCameras] = useState<CameraDevice[]>([])
-  const [selectedCamera, setSelectedCamera] = useState<string>('')
 
   // 🔹 Get available cameras
   useEffect(() => {
@@ -36,18 +36,16 @@ export default function QRScanner() {
   }, [])
 
   // 🔹 Stop QR scanner
-  const stopScanner = async () => {
+  const stopScanner = () => {
     if (html5QrCodeRef.current) {
       try {
-        if (html5QrCodeRef.current.getState() === Html5QrcodeScannerState.SCANNING) {
-          await html5QrCodeRef.current.stop()
-        }
-      } catch (err) {
+        html5QrCodeRef.current.stop()
+      } catch (err: any) {
         console.warn('Failed to stop scanner:', err)
       }
       try {
-        await html5QrCodeRef.current.clear()
-      } catch (err) {
+        html5QrCodeRef.current.clear()
+      } catch (err: any) {
         console.warn('Failed to clear scanner:', err)
       }
     }
@@ -74,62 +72,71 @@ export default function QRScanner() {
     }
 
     startScanner()
-    return () => {
-      stopScanner()
-    }
+    return () => stopScanner()
   }, [selectedCamera])
 
   // 🔹 When QR is scanned
   const handleScan = async (decodedText: string) => {
-    const studentDocRef = doc(db, 'students', decodedText)
+    setResult(decodedText)
+
+    const currentDate = new Date()
+    const formattedDate = currentDate.toLocaleDateString('en-US', {
+      month: 'long',
+      day: 'numeric',
+      year: 'numeric',
+    })
+    const formattedTime = currentDate.toLocaleTimeString('en-US', {
+      hour: '2-digit',
+      minute: '2-digit',
+    })
+
+    setDate(formattedDate)
+    setTime(formattedTime)
+    setStatus('Present')
+
+    // 🔹 Fetch student name from Firestore
     try {
-      const docSnap = await getDoc(studentDocRef)
+      const trimmedID = decodedText.trim()
+      console.log('Fetching student with ID:', trimmedID)
+
+      const docRef = doc(db, 'students', trimmedID)
+      const docSnap = await getDoc(docRef)
 
       if (docSnap.exists()) {
         const data = docSnap.data()
-        setStudentID(decodedText) // Document ID as Student ID
+        console.log('Document data:', data)
         setStudentName(data.name || 'Unknown Student')
-        const current = new Date()
-        setDate(current.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }))
-        setTime(current.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }))
-        setStatus('Present')
       } else {
-        setStudentID(decodedText)
+        console.log('No such document with ID:', trimmedID)
         setStudentName('Unknown Student')
-        setDate('')
-        setTime('')
-        setStatus('Not Found')
       }
     } catch (err) {
       console.error('Error fetching student:', err)
-      setStudentID(decodedText)
       setStudentName('Error loading name')
-      setDate('')
-      setTime('')
-      setStatus('Error')
     }
   }
 
   // 🔹 Save attendance to Firestore
   const handleSave = async () => {
-    if (!studentID) return alert('Please scan a QR code first.')
+    if (!result) return alert('Please scan a QR code first.')
 
-    const docRef = doc(db, 'students', studentID)
     try {
+      const docRef = doc(db, 'students', result.trim())
       await updateDoc(docRef, {
         attendance: {
-          date,
-          time,
-          status
-        }
+          date: date,
+          time: time,
+          status: status,
+        },
       }).catch(async () => {
+        // If student doc doesn't exist, create it
         await setDoc(docRef, {
           name: studentName || 'Unknown',
           attendance: {
-            date,
-            time,
-            status
-          }
+            date: date,
+            time: time,
+            status: status,
+          },
         })
       })
 
@@ -144,6 +151,7 @@ export default function QRScanner() {
     <div className="flex flex-col items-center gap-4 p-4">
       <h1 className="text-xl font-bold">QR Attendance Scanner</h1>
 
+      {/* Scanner container */}
       <div
         id="qr-scanner"
         ref={scannerRef}
@@ -166,10 +174,10 @@ export default function QRScanner() {
         </select>
       </label>
 
-      {/* Display scanned info */}
-      {studentID && (
+      {/* Show scanned info */}
+      {result && (
         <div className="border p-3 rounded w-full max-w-sm bg-gray-100 mt-3 text-center">
-          <p><strong>Student ID:</strong> {studentID}</p>
+          <p><strong>Student ID:</strong> {result}</p>
           <p><strong>Name:</strong> {studentName}</p>
           <p><strong>Date:</strong> {date}</p>
           <p><strong>Time:</strong> {time}</p>
